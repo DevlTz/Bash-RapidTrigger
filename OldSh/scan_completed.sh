@@ -117,4 +117,3 @@ else
 fi
 
 echo "✅ Varredura concluída! Os resultados foram salvos na pasta '$RESULT_DIR'."
-

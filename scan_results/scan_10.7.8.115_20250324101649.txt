@@ -1,0 +1,122 @@
+==============================
+[+] IP Externo: [1;33m177.20.147.82[0m
+[+] IP Interno: [0;36m10.7.8.115[0m
+
+NSLOOKUP para IP Externo (177.20.147.82) usando DNS 8.8.8.8:
+82.147.20.177.in-addr.arpa	name = portal.imd.ufrn.br.
+
+Authoritative answers can be found from:
+
+
+Ping (2 pacotes) no IP Externo (177.20.147.82):
+[0;31m177.20.147.82 não responde a ping.[0m
+
+NSLOOKUP para IP Interno (10.7.8.115) usando DNS 8.8.8.8:
+** server can't find 115.8.7.10.in-addr.arpa: NXDOMAIN
+
+
+Ping (2 pacotes) no IP Interno (10.7.8.115):
+[0;32m10.7.8.115 responde a ping.[0m
+
+[+] NAT ativo: IP externo (177.20.147.82) ≠ IP interno (10.7.8.115).
+
+[+] Executando Nmap para detectar serviços e OS em 10.7.8.115 (portas de interesse)...
+Starting Nmap 7.95 ( https://nmap.org ) at 2025-03-24 10:17 -03
+NSE: Loaded 157 scripts for scanning.
+NSE: Script Pre-scanning.
+Initiating NSE at 10:17
+Completed NSE at 10:17, 0.00s elapsed
+Initiating NSE at 10:17
+Completed NSE at 10:17, 0.00s elapsed
+Initiating NSE at 10:17
+Completed NSE at 10:17, 0.00s elapsed
+Initiating Connect Scan at 10:17
+Scanning 10.7.8.115 [16 ports]
+Discovered open port 80/tcp on 10.7.8.115
+Discovered open port 25/tcp on 10.7.8.115
+Discovered open port 443/tcp on 10.7.8.115
+Discovered open port 4422/tcp on 10.7.8.115
+Completed Connect Scan at 10:17, 2.44s elapsed (16 total ports)
+Initiating Service scan at 10:17
+Scanning 4 services on 10.7.8.115
+Completed Service scan at 10:17, 12.09s elapsed (4 services on 1 host)
+Initiating OS detection (try #1) against 10.7.8.115
+Retrying OS detection (try #2) against 10.7.8.115
+Initiating Traceroute at 10:17
+Completed Traceroute at 10:17, 0.02s elapsed
+NSE: Script scanning 10.7.8.115.
+Initiating NSE at 10:17
+Completed NSE at 10:17, 1.72s elapsed
+Initiating NSE at 10:17
+Completed NSE at 10:17, 0.68s elapsed
+Initiating NSE at 10:17
+Completed NSE at 10:17, 0.00s elapsed
+Nmap scan report for 10.7.8.115
+Host is up (0.0043s latency).
+
+PORT     STATE    SERVICE   VERSION
+21/tcp   filtered ftp
+22/tcp   closed   ssh
+25/tcp   open     smtp      Postfix smtpd
+|_smtp-commands: portal.imd.ufrn.br, PIPELINING, SIZE 10240000, ETRN, ENHANCEDSTATUSCODES, 8BITMIME, DSN
+80/tcp   open     http      Apache httpd
+|_http-server-header: Apache
+|_http-title: Titulo do site
+| http-methods: 
+|_  Supported Methods: GET POST OPTIONS HEAD
+110/tcp  filtered pop3
+111/tcp  filtered rpcbind
+143/tcp  filtered imap
+443/tcp  open     ssl/http  Apache httpd
+|_http-title: ConnectRN
+| ssl-cert: Subject: commonName=*.imd.ufrn.br/organizationName=UNIVERSIDADE FEDERAL DO RIO GRANDE DO NORTE/stateOrProvinceName=RIO GRANDE DO NORTE/countryName=BR
+| Subject Alternative Name: DNS:*.imd.ufrn.br, DNS:imd.ufrn.br
+| Issuer: commonName=GlobalSign RSA OV SSL CA 2018/organizationName=GlobalSign nv-sa/countryName=BE
+| Public Key type: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2024-08-12T16:11:05
+| Not valid after:  2025-09-13T16:11:04
+| MD5:   4bcd:8289:04e6:8ff5:dcbd:e55e:0593:38a2
+|_SHA-1: 3ff6:6085:620f:9267:e614:dccc:04db:e9d3:77d6:aa53
+|_http-server-header: Apache
+| http-methods: 
+|_  Supported Methods: GET POST OPTIONS HEAD
+465/tcp  filtered smtps
+993/tcp  filtered imaps
+995/tcp  filtered pop3s
+1194/tcp filtered openvpn
+3000/tcp filtered ppp
+3080/tcp filtered stm_pproc
+4422/tcp open     ssh       OpenSSH 7.4 (protocol 2.0)
+6090/tcp closed   unknown
+Device type: general purpose|media device|switch|storage-misc|WAP
+Running (JUST GUESSING): Linux 3.X|4.X|5.X|2.4.X (94%), Zgemma embedded (92%), Netgear embedded (90%), QNAP embedded (90%)
+OS CPE: cpe:/o:linux:linux_kernel:3 cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5.3 cpe:/o:linux:linux_kernel:4.4 cpe:/o:linux:linux_kernel:3.18.24 cpe:/o:linux:linux_kernel:4.14 cpe:/o:linux:linux_kernel:2.4
+Aggressive OS guesses: Linux 3.12 - 4.10 (94%), Linux 4.14 (94%), Linux 5.3 (93%), Zgemma H9 TV receiver (Linux 4.4) (92%), Linux 3.10 (90%), Linux 5.10 - 5.18 (90%), Linux 3.18 (90%), Linux 3.16 (90%), Netgear GS108Tv3, GS110Tv3, or GS308T switch (Linux 3.18.24) (90%), QNAP NAS device (Linux 4.14) (90%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 3 hops
+TCP Sequence Prediction: Difficulty=258 (Good luck!)
+IP ID Sequence Generation: All zeros
+Service Info: Host:  portal.imd.ufrn.br
+
+TRACEROUTE (using proto 1/icmp)
+HOP RTT     ADDRESS
+1   0.14 ms 172.30.80.1
+2   2.28 ms 10.7.99.1
+3   0.85 ms 10.7.8.115
+
+NSE: Script Post-scanning.
+Initiating NSE at 10:17
+Completed NSE at 10:17, 0.00s elapsed
+Initiating NSE at 10:17
+Completed NSE at 10:17, 0.00s elapsed
+Initiating NSE at 10:17
+Completed NSE at 10:17, 0.00s elapsed
+Read data files from: /usr/share/nmap
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 22.49 seconds
+           Raw packets sent: 66 (6.164KB) | Rcvd: 42 (4.788KB)
+
+--------------------------------------------------
+
