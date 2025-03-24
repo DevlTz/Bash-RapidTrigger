@@ -1,9 +1,0 @@
-$ips = @("10.7.8.125", "177.20.147.225") # Substituir pelos IPs da planilha antiga
-
-foreach ($ip in $ips) {
-    if (Test-Connection -ComputerName $ip -Count 2 -Quiet) {
-        Write-Host "$ip está respondendo."
-    } else {
-        Write-Host "$ip não responde."
-    }
-}
