@@ -38,7 +38,12 @@ PORTS="21,22,25,80,110,111,143,443,465,993,995,1194,3000,3080,4422,6090"
 fill_ips() {
   local prompt="$1"
   local ip_list=()
-  read -p "Deseja escanear um range de IP para $prompt? (s/n): " use_range
+
+    
+  read -p "Deseja configurar $prompt? (s/n or N): " config_resp
+  [[ "$config_resp" =~ ^[nN] ]] && return
+
+  read -p "Deseja scanear um range de IP para $prompt? (s/n): " use_range
   if [[ "$use_range" =~ ^[sS] ]]; then
       read -p "Digite o IP base (ex.: 192.168.0.): " ip_base
       read -p "Digite o valor inicial do último octeto: " start_octet
@@ -127,6 +132,12 @@ mapfile -t ips_externos < <(fill_ips "IP EXTERNO")
 echo -e "\n--- CONFIGURAR IP(s) INTERNO(s) ---"
 mapfile -t ips_internos < <(fill_ips "IP INTERNO")
 
+# Verifica se pelo menos um IP foi configurado
+if [[ ${#ips_externos[@]} -eq 0 && ${#ips_internos[@]} -eq 0 ]]; then
+  echo -e "${RED}Nenhum IP configurado!${RESET}"
+  exit 1
+fi
+
 # Para cada IP externo, para cada IP interno, faz a verificação
 for ip_ext in "${ips_externos[@]}"; do
   for ip_int in "${ips_internos[@]}"; do
@@ -134,5 +145,5 @@ for ip_ext in "${ips_externos[@]}"; do
   done
 done
 
-echo -e "✅ Varredura concluída! Resultados em '${RESULT_DIR}'."
+echo -e "✅ Varredura concluída! Resultados em: ${YELLOW}${RESULT_DIR}${RESET}."
 
