@@ -13,7 +13,10 @@ A modular **Shell Script** tool for network scanning and service detection. It p
 - **Ping Test**: Verifies host availability and response.  
 - **NAT Detection**: Checks for differences between internal and external IPs.  
 - **Hostname Resolution**: Uses **nslookup** for internal and external domains.  
-- **Automated Report Generation**: Saves results as `scan-<IP>-<timestamp>.txt`.  
+- **Automated Report Generation**: Saves results as `scan-<IP>-<timestamp>.txt`.
+- **OS Detection**: Identifies various operating systems (e.g., CentOS, Ubuntu, Windows 2012, VMware Photon, Windows 2008, Windows 2016, Alma Linux 9), with **special alerts** for CentOS.
+- **Interactive Nmap Customization**: Optionally allows the user to adjust Nmap port ranges and flags before scanning.
+
 
 ---
 
@@ -21,7 +24,8 @@ A modular **Shell Script** tool for network scanning and service detection. It p
 
 - Provide hands-on network security and analysis examples.  
 - Create an extensible framework for network scanning.  
-- Serve as an educational resource for security and sysadmin professionals.  
+- Serve as an educational resource for security and sysadmin professionals.
+- Allow flexible scanning modes: internal-only scanning or combined external/internal scanning for NAT comparison.
 
 ---
 
@@ -31,7 +35,11 @@ A modular **Shell Script** tool for network scanning and service detection. It p
 
     NAT detection: External 177.20.147.82 ≠ Internal 10.7.8.115  
 
-    Service scanning: Open and filtered ports detected  
+    Service & OS Scanning:
+    Open and filtered ports detected along with operating system fingerprinting. Special alert is provided       if CentOS is found (suggesting migration), while other OS detections are logged informatively.
+
+    Interactive Configuration:
+    The tool prompts the user for custom IP ranges and Nmap configurations, ensuring flexibility during          scans.
 
 ---
 
@@ -59,6 +67,10 @@ chmod +777 scan.sh
 > **Example:**  
 > ```bash
 > ./scan.sh
+> If only an internal IP is provided, the tool runs a standalone scan (hostname resolution, ping, Nmap, and OS detection) without attempting external tests or NAT comparison.
+> If both external and internal IPs are configured, the script performs additional NAT detection by comparing the IPs.
+
+
 > ```
 
 ---
