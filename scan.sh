@@ -79,6 +79,8 @@ check_dependencies
 DNS_SERVER="8.8.8.8"
 RESULT_DIR="Scan_Results"
 mkdir -p "$RESULT_DIR"
+# Lista de S.O para scan
+S_O="CentOS,Ubuntu,Windows 2012,VMware Photon,Windows 2008,Windows 2016,Alma Linux 9"
 # Porta padrão para scan (pode ser alterada interativamente)
 PORTS="21,22,25,80,110,111,143,443,465,587,993,995,1194,3000,3080,4422,6090"
 # Flags Nmap padrão
@@ -120,7 +122,7 @@ check_nat() {
 
   log "\n${BOLD}${WHITE}[VERIFICANDO O NAT]${RESET}"
   log "=============================="
-  log "${BOLD}[+] IP Externo: ${YELLOW}${ip_externo}${RESET}"
+  log "${BOLD}[+] IP Externo: ${YELLOW}${ip_externo}${RESET} ou {$YELLOW}${ip_externo_mano}${RESET}"
   log "${BOLD}[+] IP Interno: ${CYAN}${ip_interno}${RESET}\n"
 
   # Obtém o IP externo real via curl
@@ -149,8 +151,102 @@ check_nat() {
 }
 
 ######################
-# S C A N   DO   P A R
-#   IP EXTERNO / IP INTERNO
+# FUNÇÃO PARA DETECÇÃO DE S.O.
+######################
+detecta_so() {
+  local nmap_out="$1"
+  local found_os=()
+  IFS=',' read -ra so_list <<< "$S_O"
+  for os in "${so_list[@]}"; do
+    if echo "$nmap_out" | grep -qi "$os"; then
+      if [[ "$os" =~ ^[Cc]entOS$ ]]; then
+        log "${RED}[ALERTA] Sistema Operacional ${os} detectado. Status: MIGRAR!${RESET}"
+      else
+        log "${CYAN}[INFO] Sistema Operacional ${os} detectado.${RESET}"
+      fi
+      found_os+=("$os")
+    fi
+  done
+  if [ ${#found_os[@]} -eq 0 ]; then
+    log "${YELLOW}[INFO] Nenhum S.O. conhecido foi detectado.${RESET}"
+  fi
+}
+
+######################
+# FUNÇÃO PARA CONFIGURAÇÃO DO NMAP
+######################
+configura_nmap() {
+  local final_ports="$PORTS"
+  local final_flags="$NMAP_FLAGS"
+  read -p "Deseja alterar as configurações do NMAP? (s/n): " resp_nmap
+  if [[ "$resp_nmap" =~ ^[sS] ]]; then
+    read -p "Passe portas do seu interesse (Padrão: ${PORTS}): " custom_ports
+    if [ -n "$custom_ports" ]; then
+      final_ports="$custom_ports"
+    fi
+    read -p "Passe outras flags para o Nmap (opcional): " extra_flags
+    final_flags="${NMAP_FLAGS} ${extra_flags}"
+  fi
+  # Retorna os valores via echo (separados por espaço)
+  echo "$final_ports" "$final_flags"
+}
+
+
+######################
+# S C A N   PARA IP INTERNO (apenas)
+######################
+scan_internal() {
+  local ip_interno="$1"
+  local ts
+  ts=$(date +%m%d%H%M)
+  LOG_FILE="${RESULT_DIR}/scan_${ip_interno}_${ts}.txt"
+  > "$LOG_FILE"
+
+  log "\n${BOLD}${WHITE}[INICIANDO A BUSCA - IP INTERNO]${RESET}"
+  log "${BOLD}IP Interno: ${CYAN}${ip_interno}${RESET}"
+
+  # NSLOOKUP e Ping do IP Interno
+  log "\n[NSLOOKUP para IP Interno] ($ip_interno) (usando DNS $DNS_SERVER)"
+  nslookup "$ip_interno" "$DNS_SERVER" | tee -a "$LOG_FILE"
+  log "\n${F_BOLD}${C_SLATEBLUE1}Ping (4 pacotes) no IP Interno: ($ip_interno)${NO_FORMAT}"
+  if ping -c 4 "$ip_interno" &>/dev/null; then
+    log "${GREEN}${ip_interno} responde a ping.${RESET}"
+  else
+    log "${RED}${ip_interno} não responde a ping.${RESET}"
+  fi
+
+  # Configuração e execução do NMAP
+  log "\n${BOLD}[CONFIGURAÇÃO DO NMAP]${RESET}"
+  read -p "Deseja alterar as configurações do NMAP? (s/n): " resp_nmap
+  if [[ "$resp_nmap" =~ ^[sS] ]]; then
+    read -p "Passe portas do seu interesse (Padrão: ${PORTS}): " custom_ports
+    [ -n "$custom_ports" ] && PORTS="$custom_ports"
+    read -p "Passe outras flags para o Nmap (opcional): " extra_flags
+    final_flags="${NMAP_FLAGS} ${extra_flags}"
+  else
+    final_flags="$NMAP_FLAGS"
+  fi
+  log "\n${BOLD}[EXECUTANDO O SCAN DO NMAP]${RESET} em ${CYAN}${ip_interno}${RESET}"
+  local nmap_cmd="nmap -n ${final_flags} -p${PORTS} ${ip_interno}"
+  log "${BOLD}Comando: ${MAGENTA}${nmap_cmd}${RESET}"
+  local nmap_output
+  nmap_output=$(eval "$nmap_cmd")
+  log "$nmap_output"
+
+  # Exibição do hostname do IP Interno
+  log "\n${BOLD}[HOSTNAME ENCONTRADO!]${RESET}"
+  local hostname_output
+  hostname_output=$(nslookup "$ip_interno" "$DNS_SERVER" | grep 'name =')
+  log "${BLUE}$hostname_output${RESET}"
+
+  # Detecção de S.O.
+  detecta_so "$nmap_output"
+
+  log "\n--------------------------------------------------\n"
+}
+
+######################
+# S C A N   PARA IP EXTERNO + IP INTERNO
 ######################
 scan_pair() {
   local ip_externo="$1"
@@ -158,11 +254,10 @@ scan_pair() {
   local ts
   ts=$(date +%m%d%H%M)
   LOG_FILE="${RESULT_DIR}/scan_${ip_interno}_${ts}.txt"
-  # Inicializa o arquivo de log
   > "$LOG_FILE"
 
-  log "\n${BOLD}${WHITE}[INICIANDO A BUSCA]${RESET}"
-  log "${BOLD}Par de IP's: ${YELLOW}${ip_externo}${RESET} ↔ ${CYAN}${ip_interno}${RESET}"
+  log "\n${BOLD}${WHITE}[INICIANDO A BUSCA - PAR DE IPs]${RESET}"
+  log "${BOLD}IP Externo: ${YELLOW}${ip_externo}${RESET}  ↔  IP Interno: ${CYAN}${ip_interno}${RESET}"
 
   # NSLOOKUP e Ping do IP Externo
   log "\n[NSLOOKUP para IP Externo] ($ip_externo) (usando DNS $DNS_SERVER)"
@@ -187,17 +282,19 @@ scan_pair() {
   # Verificação NAT
   check_nat "$ip_externo" "$ip_interno"
 
-  # Configuração do Nmap
+  # Configuração e execução do NMAP
   log "\n${BOLD}[CONFIGURAÇÃO DO NMAP]${RESET}"
-  read -p "Passe portas do seu interesse (Padrão: ${PORTS}): " custom_ports
-  if [ -n "$custom_ports" ]; then
-    PORTS="$custom_ports"
+  read -p "Deseja alterar as configurações do NMAP? (s/n): " resp_nmap
+  if [[ "$resp_nmap" =~ ^[sS] ]]; then
+    read -p "Passe portas do seu interesse (Padrão: ${PORTS}): " custom_ports
+    [ -n "$custom_ports" ] && PORTS="$custom_ports"
+    read -p "Passe outras flags para o Nmap (opcional): " extra_flags
+    final_flags="${NMAP_FLAGS} ${extra_flags}"
+  else
+    final_flags="$NMAP_FLAGS"
   fi
-  read -p "Passe outras flags para o Nmap (opcional): " extra_flags
-  local flags="${NMAP_FLAGS} ${extra_flags}"
-
   log "\n${BOLD}[EXECUTANDO O SCAN DO NMAP]${RESET} em ${CYAN}${ip_interno}${RESET}"
-  local nmap_cmd="nmap -n ${flags} -p${PORTS} ${ip_interno}"
+  local nmap_cmd="nmap -n ${final_flags} -p${PORTS} ${ip_interno}"
   log "${BOLD}Comando: ${MAGENTA}${nmap_cmd}${RESET}"
   local nmap_output
   nmap_output=$(eval "$nmap_cmd")
@@ -209,10 +306,8 @@ scan_pair() {
   hostname_output=$(nslookup "$ip_interno" "$DNS_SERVER" | grep 'name =')
   log "${BLUE}$hostname_output${RESET}"
 
-  # Alerta para CentOS
-  if echo "$nmap_output" | grep -qi "CentOS"; then
-    log "\n${BOLD}${RED}[ALERTA] Sistema Operacional CentOS detectado.${RESET} Status: ${YELLOW}MIGRAR!${RESET}"
-  fi
+  # Detecção de S.O.
+  detecta_so "$nmap_output"
 
   log "\n--------------------------------------------------\n"
 }
@@ -237,11 +332,25 @@ if [[ ${#ips_externos[@]} -eq 0 && ${#ips_internos[@]} -eq 0 ]]; then
 fi
 
 # Para cada IP externo, para cada IP interno, executa a verificação
-for ip_ext in "${ips_externos[@]}"; do
+#for ip_ext in "${ips_externos[@]}"; do
+ # for ip_int in "${ips_internos[@]}"; do
+   # scan_pair "$ip_ext" "$ip_int"
+  #done
+#done
+
+# Se IP externo não foi configurado, faz varredura somente no IP interno
+if [ ${#ips_externos[@]} -eq 0 ]; then
   for ip_int in "${ips_internos[@]}"; do
-    scan_pair "$ip_ext" "$ip_int"
+    scan_internal "$ip_int"
   done
-done
+else
+  # Se ambos foram configurados, para cada combinação executa o scan
+  for ip_ext in "${ips_externos[@]}"; do
+    for ip_int in "${ips_internos[@]}"; do
+      scan_pair "$ip_ext" "$ip_int"
+    done
+  done
+fi
 
 echo -e "\n${BOLD}${GREEN}✅ Varredura concluída!${RESET} Resultados salvos em: ${YELLOW}${RESULT_DIR}${RESET}."
 
