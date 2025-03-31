@@ -85,6 +85,9 @@ S_O="CentOS,Ubuntu,Windows 2012,VMware Photon,Windows 2008,Windows 2016,Alma Lin
 PORTS="21,22,25,80,110,111,143,443,465,587,993,995,1194,3000,3080,4422,6090"
 # Flags Nmap padrão
 NMAP_FLAGS="-A -T4 -Pn -sT -sC -O -sV -v"
+NMAP_FLAGS_2="-A -T4 -Pn -sS -f"
+NMAP_FLAGS_4="-A -T4 -Pn -sS -D"
+NMAP_FLAGS_3="-a -T4 -Pn -sT"
 HOSTNAME=$(hostname)
 timestamp=$(date +%Y%m%d%H%M%S)
 
@@ -119,15 +122,15 @@ fill_ips() {
 check_nat() {
   local ip_externo="$1"
   local ip_interno="$2"
-
-  log "\n${BOLD}${WHITE}[VERIFICANDO O NAT]${RESET}"
-  log "=============================="
-  log "${BOLD}[+] IP Externo: ${YELLOW}${ip_externo}${RESET} ou {$YELLOW}${ip_externo_mano}${RESET}"
-  log "${BOLD}[+] IP Interno: ${CYAN}${ip_interno}${RESET}\n"
-
-  # Obtém o IP externo real via curl
+  
   local ip_externo_mano
   ip_externo_mano=$(curl -s4 ifconfig.me)
+  log "\n${BOLD}${WHITE}[VERIFICANDO O NAT]${RESET}"
+  log "=============================="
+  log "${BOLD}[+] IP Externo: ${YELLOW}${ip_externo}${RESET} ou ${YELLOW}${ip_externo_mano}${RESET}"
+  log "${BOLD}[+] IP Interno: ${CYAN}${ip_interno}${RESET}\n"
+
+ 
   log "${BOLD}IP EXTERNO VERDADEIRO: ${MAGENTA}${ip_externo_mano}${RESET}"
 
   # Se o IP interno estiver em faixa privada
